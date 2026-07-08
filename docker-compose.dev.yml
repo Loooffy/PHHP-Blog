@@ -2,6 +2,26 @@
 # 使用方式: docker compose -f docker-compose.dev.yml --env-file .env.dev up -d
 
 services:
+  # PostgreSQL 服務
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    networks:
+      - postgres-shared-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   # Rails Backend API 服務
   backend:
     build:
@@ -39,6 +59,9 @@ services:
        bin/rails db:create db:migrate db:seed &&
        bin/rails server -b 0.0.0.0 -p ${RAILS_PORT}
       "
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - app-network
       - postgres-shared-net
@@ -75,9 +98,10 @@ volumes:
     driver: local
   frontend_next_dev:
     driver: local
+  postgres_data_dev:
 
 networks:
   app-network:
     driver: bridge
   postgres-shared-net:
-    external: true
+    driver: bridge
