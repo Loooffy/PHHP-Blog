@@ -19,13 +19,14 @@ function formatYear(dateString: string): string {
 export function BookListItem({ post, category }: BookListItemProps) {
   const [imageError, setImageError] = useState(false);
   const bookTitle = post.title;
+  const bookSubtitle = post.description?.trim() ?? '';
   const bookAuthor = post.author ?? '';
   const bookYear = post.year != null ? String(post.year) : formatYear(post.created_at);
 
   return (
     <Link
       href={`/${category}/${post.slug || post.id}`}
-      className="no-underline mx-8 px-0 w-full text-inherit block group relative"
+      className="no-underline px-0 w-full text-inherit group relative"
     >
       {/* 左側垂直線 - 深灰色 */}
       <div className="absolute left-0 top-0 bottom-0 w-px bg-gray-300" />
@@ -48,18 +49,27 @@ export function BookListItem({ post, category }: BookListItemProps) {
           </div>
         )}
       </div>
-      <div className='w-full ml-5'>
+      <div className='w-full ml-4'>
         {/* 標題 */}
-        <h3 className="text-[24px] mt-2 font-normal text-black mb-2" style={{ fontFamily: 'Inter, sans-serif' }}>
+        <h3 className="text-[21px] mt-2 font-normal text-black" style={{ fontFamily: 'Inter, sans-serif' }}>
           {bookTitle}
         </h3>
 
+        {bookSubtitle && (
+          <p
+            className="text-[15px] font-normal text-black mb-2 ml-1 line-clamp-2"
+            style={{ fontFamily: 'Inter, sans-serif' }}
+          >
+            {bookSubtitle}
+          </p>
+        )}
+
         {/* 作者和年份 */}
         <div className="flex ml-1 justify-between items-start">
-          <p className="text-base font-light text-black" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <p className="text-[0.8rem] font-light text-black" style={{ fontFamily: 'Inter, sans-serif' }}>
             {bookAuthor}
           </p>
-          <p className="text-base font-bold text-black pr-0" style={{ fontFamily: 'Inter, sans-serif' }}>
+          <p className="text-[0.8rem] font-bold text-black pr-0" style={{ fontFamily: 'Inter, sans-serif' }}>
             {bookYear}
           </p>
         </div>

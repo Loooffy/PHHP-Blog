@@ -29,9 +29,16 @@ class Post < ApplicationRecord
     return if slug.present? || title.blank?
 
     full_hash = Digest::MD5.hexdigest(title)
-    candidate = full_hash[0, 8]
-    # 若發生碰撞，使用更多字元
-    candidate = full_hash[0, 16] while Post.exists?(slug: candidate)
+    base = full_hash[0, 8]
+    candidate = base
+    suffix = 1
+
+    # 若發生碰撞，加入遞增序號產生可變候選值，避免無限迴圈
+    while Post.exists?(slug: candidate)
+      candidate = "#{base}-#{suffix}"
+      suffix += 1
+    end
+
     self.slug = candidate
   end
 

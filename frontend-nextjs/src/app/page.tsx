@@ -28,12 +28,12 @@ function HoverImageLink({
       <img
         src={defaultSrc}
         alt={alt}
-        className={`${className ?? ''} object-cover transition-opacity ${isHovered ? 'opacity-0' : 'opacity-100'}`}
+        className={`${className ?? ''} object-cover ${isHovered ? 'opacity-0' : 'opacity-100'}`}
       />
       <img
         src={hoverSrc}
         alt={alt}
-        className={`${className ?? ''} object-cover absolute top-0 left-0 transition-opacity ${isHovered ? 'opacity-100' : 'opacity-0'}`}
+        className={`${className ?? ''} object-cover absolute top-0 left-0 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
       />
     </Link>
   );
