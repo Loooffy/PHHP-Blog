@@ -7,7 +7,7 @@ services:
   backend:
     build:
       context: ./backend-activeAdmin
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
     container_name: pp_hh_blog_backend_prod
     environment:
       - RAILS_ENV=production
