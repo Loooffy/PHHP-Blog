@@ -1,8 +1,8 @@
 'use client';
 
+import { remarkStripCodeFences } from '@/lib/remark-strip-code-fences';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { remarkStripCodeFences } from '@/lib/remark-strip-code-fences';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { BookBottomBar } from './BookBottomBar';
@@ -42,19 +42,21 @@ function getAuthorName(author: BookPostProps['post']['author']): string {
 
 const BookMetadata = ({
     title,
+    description,
     author,
     year,
     coverImageUrl,
     updatedAt,
 }: {
     title: string;
+    description: string | null;
     author: string;
     year: string;
     coverImageUrl: string | null;
     updatedAt: string;
 }) => (
-    <div className="break-after-column break-inside-avoid h-full flex items-center justify-center min-h-[60vh]">
-        <div className="bg-stone-100 p-8 rounded-xl flex flex-col md:flex-row gap-8 items-center w-full h-full max-h-[80vh] shadow-sm relative">
+    <div className="break-inside-avoid flex items-center justify-center min-h-[60vh]">
+        <div className="bg-stone-100 p-8 rounded-xl flex flex-col md:flex-row gap-8 items-center w-full shadow-sm relative">
             {coverImageUrl ? (
                 <img
                     src={coverImageUrl}
@@ -63,15 +65,16 @@ const BookMetadata = ({
                     referrerPolicy="no-referrer"
                 />
             ) : null}
-            <div className="flex-1 flex flex-col justify-center h-full relative w-full text-center md:text-left">
-                <h1 className="text-4xl md:text-5xl !leading-[1.1] !mt-0 !mb-6 !border-b-0 !pb-0 font-bold text-stone-900">
+            <div className="flex-1 flex flex-col justify-center w-full text-center md:text-left">
+                <h1 className="text-4xl md:text-2xl !leading-[1.1] !mt-0 mb-2 !border-b-0 !pb-0 font-bold text-stone-900">
                     {title}
                 </h1>
+                <div className="text-m mb-6">{description}</div>
                 <div className="text-lg text-stone-600 space-y-2">
-                    {author ? <p className="!mb-2">作者：{author}</p> : null}
+                    {author ? <p className="!mb-2 text-sm">作者：{author}</p> : null}
                     {year ? <p className="!mb-2">初版：{year}</p> : null}
                 </div>
-                <p className="text-sm text-stone-400 !m-0 mt-8 md:mt-0 absolute bottom-0 right-0">
+                <p className="text-sm text-stone-400 mt-6 md:mt-8 md:text-right">
                     最後更新：{formatDate(updatedAt)}
                 </p>
             </div>
@@ -81,21 +84,25 @@ const BookMetadata = ({
 
 export function BookPost({ post, backLinkHref, backLinkLabel }: BookPostProps) {
     const bookTitle = post.title;
+    const description = post.description ?? null;
     const bookAuthor = getAuthorName(post.author);
     const bookYear = post.year != null ? String(post.year) : '';
     const coverImageUrl = post.image_url ?? null;
     const updatedAt = post.updated_at || post.created_at;
     const bodyContent = normalizeReaderContent(
-        (post.content ?? '').trim() || (post.description ?? '').trim()
+        (post.content ?? '').trim()
     );
 
-    const [fontSize, setFontSize] = useState(14);
+    const [fontSize, setFontSize] = useState(16);
     const [currentPage, setCurrentPage] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+    const [needsTrailingBlankColumn, setNeedsTrailingBlankColumn] = useState(false);
+    const isLayoutReady = dimensions.width > 0 && dimensions.height > 0;
 
     const readerRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
+    const layoutSignatureRef = useRef('');
 
     useEffect(() => {
         if (dimensions.width > 0) {
@@ -112,14 +119,35 @@ export function BookPost({ post, backLinkHref, backLinkLabel }: BookPostProps) {
 
             if (clientWidth > 0) {
                 setDimensions({ width: clientWidth, height: clientHeight });
-                const total = Math.max(1, Math.round(scrollWidth / clientWidth));
+                const layoutSignature = `${bodyContent.length}-${fontSize}-${clientWidth}`;
+                if (layoutSignatureRef.current !== layoutSignature) {
+                    layoutSignatureRef.current = layoutSignature;
+                    if (needsTrailingBlankColumn) {
+                        setNeedsTrailingBlankColumn(false);
+                        return;
+                    }
+                }
+                const isDesktopTwoColumn = window.matchMedia('(min-width: 768px)').matches;
+                const maxScrollLeft = Math.max(0, scrollWidth - clientWidth);
+                const total = Math.max(
+                    1,
+                    Math.floor((maxScrollLeft + 0.5) / clientWidth) + 1
+                );
+                if (!needsTrailingBlankColumn && isDesktopTwoColumn) {
+                    const remainder = maxScrollLeft % clientWidth;
+                    const hasSingleColumnTail = remainder > clientWidth * 0.25;
+                    if (hasSingleColumnTail) {
+                        setNeedsTrailingBlankColumn(true);
+                        return;
+                    }
+                }
                 setTotalPages(total);
                 const currentScroll = readerRef.current.scrollLeft;
-                const page = Math.round(currentScroll / clientWidth);
+                const page = Math.min(total - 1, Math.floor(currentScroll / clientWidth));
                 setCurrentPage(page);
             }
         }
-    }, []);
+    }, [bodyContent.length, fontSize, needsTrailingBlankColumn]);
 
     useEffect(() => {
         const resizeObserver = new ResizeObserver(() => {
@@ -179,7 +207,7 @@ export function BookPost({ post, backLinkHref, backLinkLabel }: BookPostProps) {
         if (readerRef.current) {
             const clientWidth = readerRef.current.clientWidth;
             const scrollLeft = readerRef.current.scrollLeft;
-            const page = Math.round(scrollLeft / clientWidth);
+            const page = Math.min(totalPages - 1, Math.floor(scrollLeft / clientWidth));
             if (page !== currentPage) {
                 setCurrentPage(page);
             }
@@ -212,7 +240,9 @@ export function BookPost({ post, backLinkHref, backLinkLabel }: BookPostProps) {
                 <div
                     ref={readerRef}
                     onScroll={handleScroll}
-                    className="absolute inset-0 overflow-x-auto overflow-y-hidden snap-x snap-mandatory scroll-smooth hide-scrollbar"
+                    className={`absolute inset-0 overflow-x-auto overflow-y-hidden snap-x snap-mandatory scroll-smooth hide-scrollbar ${
+                        isLayoutReady ? 'opacity-100' : 'opacity-0'
+                    }`}
                 >
                     <div
                         ref={contentRef}
@@ -222,7 +252,7 @@ export function BookPost({ post, backLinkHref, backLinkLabel }: BookPostProps) {
                         <div
                             className={`
                 contents max-w-none
-                [&>p]:text-justify [&>p]:mb-6 [&>p]:mt-4 [&>p]:break-inside-avoid
+                [&>p]:text-justify [&>p]:mb-6 [&>p]:mt-4
                 [&>h1]:break-inside-avoid [&>h1]:break-after-avoid [&>h1]:mt-8 [&>h1]:mb-4 [&>h1]:text-stone-900 [&>h1]:border-b [&>h1]:border-stone-200 [&>h1]:pb-2
                 [&>h2]:break-inside-avoid [&>h2]:break-after-avoid [&>h2]:mt-8 [&>h2]:mb-4 [&>h2]:text-stone-900
                 [&>h3]:break-inside-avoid [&>h3]:break-after-avoid [&>h3]:mt-8 [&>h3]:mb-4 [&>h3]:text-stone-900
@@ -242,12 +272,19 @@ export function BookPost({ post, backLinkHref, backLinkLabel }: BookPostProps) {
                         >
                             <BookMetadata
                                 title={bookTitle}
+                                description={description}
                                 author={bookAuthor}
                                 year={bookYear}
                                 coverImageUrl={coverImageUrl}
                                 updatedAt={updatedAt}
                             />
                             <ReactMarkdown remarkPlugins={[remarkGfm, remarkStripCodeFences]}>{bodyContent}</ReactMarkdown>
+                            {needsTrailingBlankColumn ? (
+                                <div
+                                    className="hidden md:block break-before-column h-[var(--page-height,100vh)]"
+                                    aria-hidden
+                                />
+                            ) : null}
                         </div>
                     </div>
                 </div>
