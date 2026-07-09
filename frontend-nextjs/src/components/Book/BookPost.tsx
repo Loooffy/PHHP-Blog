@@ -13,6 +13,7 @@ interface BookPostProps {
         id: number;
         title: string;
         content: string | null;
+        description?: string | null;
         image_url: string | null;
         created_at: string;
         updated_at?: string;
@@ -21,6 +22,10 @@ interface BookPostProps {
     };
     backLinkHref?: string;
     backLinkLabel?: string;
+}
+
+function normalizeReaderContent(content: string): string {
+    return content.replace(/\r\n/g, '\n').trim();
 }
 
 function formatDate(dateString: string): string {
@@ -80,7 +85,9 @@ export function BookPost({ post, backLinkHref, backLinkLabel }: BookPostProps) {
     const bookYear = post.year != null ? String(post.year) : '';
     const coverImageUrl = post.image_url ?? null;
     const updatedAt = post.updated_at || post.created_at;
-    const content = post.content ?? '';
+    const bodyContent = normalizeReaderContent(
+        (post.content ?? '').trim() || (post.description ?? '').trim()
+    );
 
     const [fontSize, setFontSize] = useState(14);
     const [currentPage, setCurrentPage] = useState(0);
@@ -128,12 +135,12 @@ export function BookPost({ post, backLinkHref, backLinkLabel }: BookPostProps) {
         calculatePages();
 
         return () => resizeObserver.disconnect();
-    }, [calculatePages, content]);
+    }, [calculatePages, bodyContent]);
 
     useEffect(() => {
         const timer = setTimeout(calculatePages, 150);
         return () => clearTimeout(timer);
-    }, [content, fontSize, calculatePages]);
+    }, [bodyContent, fontSize, calculatePages]);
 
     useEffect(() => {
         if (readerRef.current && dimensions.width > 0) {
@@ -190,7 +197,7 @@ export function BookPost({ post, backLinkHref, backLinkLabel }: BookPostProps) {
     };
 
     return (
-        <div className="fixed inset-0 bg-[#fdfaf6] text-stone-800 flex flex-col overflow-hidden font-serif select-none">
+        <div className="fixed inset-0 z-[1000] bg-[#fdfaf6] text-stone-800 flex flex-col overflow-hidden font-serif select-none">
             <BookNavBar
                 fontSize={fontSize}
                 setFontSize={setFontSize}
@@ -240,7 +247,7 @@ export function BookPost({ post, backLinkHref, backLinkLabel }: BookPostProps) {
                                 coverImageUrl={coverImageUrl}
                                 updatedAt={updatedAt}
                             />
-                            <ReactMarkdown remarkPlugins={[remarkGfm, remarkStripCodeFences]}>{content}</ReactMarkdown>
+                            <ReactMarkdown remarkPlugins={[remarkGfm, remarkStripCodeFences]}>{bodyContent}</ReactMarkdown>
                         </div>
                     </div>
                 </div>

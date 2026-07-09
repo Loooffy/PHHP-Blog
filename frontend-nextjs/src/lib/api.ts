@@ -62,7 +62,10 @@ export async function listPosts(
     if (!res.ok) {
       return { posts: [], meta: defaultPaginationMeta() };
     }
-    const data: PostsListResponse = await res.json();
+    const data = await parseJsonResponse<PostsListResponse>(res, {
+      posts: [],
+      meta: defaultPaginationMeta(),
+    });
     // 若以 series 查詢，依 series_number 由小到大排序
     if (params?.series_id != null && data.posts.length > 0) {
       data.posts.sort((a, b) => {
@@ -87,11 +90,22 @@ function defaultPaginationMeta(): PaginationMeta {
   };
 }
 
+async function parseJsonResponse<T>(res: Response, fallback: T): Promise<T> {
+  if (res.status === 204) return fallback;
+  const text = await res.text();
+  if (!text.trim()) return fallback;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return fallback;
+  }
+}
+
 export async function getPost(slug: string): Promise<PostDetail | null> {
   try {
     const res = await fetch(API_ENDPOINTS.post(slug), { cache: 'no-store' });
     if (!res.ok) return null;
-    return res.json();
+    return parseJsonResponse<PostDetail | null>(res, null);
   } catch (error) {
     console.error('Failed to fetch post:', error);
     return null;
@@ -109,7 +123,10 @@ export async function getSeriesPosts(
     if (!res.ok) {
       return { series_id: null, posts: [] };
     }
-    const data = await res.json();
+    const data = await parseJsonResponse<SeriesPostsResponse>(res, {
+      series_id: null,
+      posts: [],
+    });
     // 依 series_number 升序排序，數字越小排越前面
     data.posts.sort((a: { series_number: number }, b: { series_number: number }) =>
       a.series_number - b.series_number
@@ -131,7 +148,7 @@ export async function listTags(
     const url = query ? `${API_ENDPOINTS.tags()}?${query}` : API_ENDPOINTS.tags();
     const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) return { tags: [] };
-    return res.json();
+    return parseJsonResponse<TagsListResponse>(res, { tags: [] });
   } catch (error) {
     console.error('Failed to fetch tags:', error);
     return { tags: [] };
@@ -150,7 +167,7 @@ export async function listSeries(
       : API_ENDPOINTS.series();
     const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) return { series: [] };
-    return res.json();
+    return parseJsonResponse<SeriesListResponse>(res, { series: [] });
   } catch (error) {
     console.error('Failed to fetch series:', error);
     return { series: [] };

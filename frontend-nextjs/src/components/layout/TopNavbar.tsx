@@ -9,11 +9,9 @@ import { NavLinks } from './NavLinks';
 import { ThemeToggle } from './ThemeToggle';
 
 export function TopNavbar() {
-  const { mode, category } = useTheme();
+  const { mode, canToggle } = useTheme();
   const pathname = usePathname();
-  const effectiveMode =
-    category === 'film' ? 'dark' : category === 'book' ? 'light' : mode;
-  const logoSrc = effectiveMode === 'dark' ? '/blog-logo-white.png' : '/blog-logo-black.png';
+  const logoSrc = mode === 'dark' ? '/blog-logo-white.png' : '/blog-logo-black.png';
 
   if (pathname === '/') {
     return null;
@@ -51,11 +49,7 @@ export function TopNavbar() {
       <div className="flex items-center justify-end">
         <NavLinks />
         <div className="flex items-center w-10 flex-shrink-0 md:w-9">
-          {pathname.startsWith('/film') || pathname.startsWith('/book') ? (
-            <span aria-hidden="true" />
-          ) : (
-            <ThemeToggle disabled={pathname !== '/' && !pathname.startsWith('/dev')} />
-          )}
+          {canToggle ? <ThemeToggle /> : <span aria-hidden="true" />}
         </div>
       </div>
     </nav>

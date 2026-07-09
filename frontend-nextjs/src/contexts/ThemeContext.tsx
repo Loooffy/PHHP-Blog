@@ -1,26 +1,33 @@
 'use client';
 
-import { Category, ThemeMode, getTheme } from '@/lib/theme';
+import {
+  Category,
+  ThemeMode,
+  canToggleTheme,
+  getCategoryFromPath,
+  getTheme,
+  resolveThemeMode,
+} from '@/lib/theme';
 import { usePathname } from 'next/navigation';
-import React, { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useLayoutEffect, useState } from 'react';
+
+const DEV_MODE_STORAGE_KEY = 'blog-theme-mode';
 
 interface ThemeContextType {
   category: Category;
   mode: ThemeMode;
-  setCategory: (category: Category) => void;
-  setMode: (mode: ThemeMode) => void;
+  canToggle: boolean;
   toggleMode: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-// 應用主題到 DOM
-function applyTheme(theme: ReturnType<typeof getTheme>) {
+function applyTheme(category: Category, mode: ThemeMode) {
   if (typeof window === 'undefined') return;
 
+  const theme = getTheme(category, mode);
   const root = document.documentElement;
 
-  // 使用 setProperty 設置每個 CSS 變數，避免覆蓋其他樣式
   root.style.setProperty('--color-primary', theme.colors.primary);
   root.style.setProperty('--color-secondary', theme.colors.secondary);
   root.style.setProperty('--color-background', theme.colors.background);
@@ -33,133 +40,41 @@ function applyTheme(theme: ReturnType<typeof getTheme>) {
   root.style.setProperty('--color-tag-hover-text', theme.colors.tagHoverText);
   root.style.setProperty('--font-heading', theme.fonts.heading);
   root.style.setProperty('--font-body', theme.fonts.body);
+  root.setAttribute('data-theme', `${category}-${mode}`);
 }
 
-// 初始化函數：在組件渲染前設置 CSS 變數
-function initializeTheme() {
-  if (typeof window === 'undefined') return { category: 'dev' as Category, mode: 'light' as ThemeMode };
+function readDevMode(): ThemeMode {
+  if (typeof window === 'undefined') return 'light';
 
-  const savedCategory = localStorage.getItem('blog-category') as Category;
-  const savedMode = localStorage.getItem('blog-theme-mode') as ThemeMode;
+  const saved = localStorage.getItem(DEV_MODE_STORAGE_KEY) as ThemeMode | null;
+  if (saved === 'light' || saved === 'dark') return saved;
 
-  let category: Category = 'dev';
-  let mode: ThemeMode = 'light';
-
-  if (savedCategory && ['dev', 'game', 'film', 'book'].includes(savedCategory)) {
-    category = savedCategory;
-  }
-
-  if (savedMode && ['light', 'dark'].includes(savedMode)) {
-    mode = savedMode;
-  } else {
-    // 檢查系統偏好
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    mode = prefersDark ? 'dark' : 'light';
-  }
-
-  // film 頁面固定使用 dark theme；book 頁面固定使用 light theme
-  const effectiveMode =
-    category === 'film' ? 'dark' : category === 'book' ? 'light' : mode;
-  const theme = getTheme(category, effectiveMode);
-  applyTheme(theme);
-  document.documentElement.setAttribute('data-theme', `${category}-${effectiveMode}`);
-
-  return { category, mode };
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isHomePage = pathname === '/';
+  const category = getCategoryFromPath(pathname);
+  const [devMode, setDevMode] = useState<ThemeMode>(readDevMode);
 
-  const [category, setCategory] = useState<Category>('dev');
-  const [mode, setMode] = useState<ThemeMode>('light');
-  const [mounted, setMounted] = useState(false);
-  // 使用 ref 保存最新的值，以便在 toggleMode 中訪問
-  const categoryRef = useRef<Category>(category);
-  const mountedRef = useRef<boolean>(mounted);
+  const mode = resolveThemeMode(pathname, devMode);
+  const canToggle = canToggleTheme(pathname);
 
-  // 在組件掛載前初始化主題（使用 useLayoutEffect 確保同步執行）
   useLayoutEffect(() => {
-    const { category: initCategory, mode: initMode } = initializeTheme();
-    setCategory(initCategory);
-    categoryRef.current = initCategory;
-    setMode(initMode);
-    setMounted(true);
-    mountedRef.current = true;
-    if (pathname === '/') {
-      const theme = getTheme('dev', 'light');
-      applyTheme(theme);
-      document.documentElement.setAttribute('data-theme', 'dev-light');
-    }
-  }, [pathname]);
-
-  // 更新 ref 值
-  useEffect(() => {
-    categoryRef.current = category;
-  }, [category]);
+    applyTheme(category, mode);
+  }, [category, mode]);
 
   useEffect(() => {
-    mountedRef.current = mounted;
-  }, [mounted]);
-
-  // 儲存偏好設定
-  useEffect(() => {
-    if (!mounted) return;
-    localStorage.setItem('blog-category', category);
-  }, [category, mounted]);
-
-  useEffect(() => {
-    if (!mounted) return;
-    localStorage.setItem('blog-theme-mode', mode);
-  }, [mode, mounted]);
-
-  // 更新 CSS 變數；首頁固定 dev-light、film 固定 dark、book 固定 light
-  useEffect(() => {
-    if (!mounted) return;
-    if (isHomePage) {
-      const theme = getTheme('dev', 'light');
-      applyTheme(theme);
-      document.documentElement.setAttribute('data-theme', 'dev-light');
-      return;
-    }
-    const effectiveMode =
-      category === 'film' ? 'dark' : category === 'book' ? 'light' : mode;
-    const theme = getTheme(category, effectiveMode);
-    applyTheme(theme);
-    document.documentElement.setAttribute('data-theme', `${category}-${effectiveMode}`);
-  }, [category, mode, mounted, isHomePage]);
+    localStorage.setItem(DEV_MODE_STORAGE_KEY, devMode);
+  }, [devMode]);
 
   const toggleMode = () => {
-    setMode((prevMode) => {
-      const newMode = prevMode === 'light' ? 'dark' : 'light';
-      // 立即應用新主題，不等待 useEffect
-      // 使用 ref 確保訪問最新的 category 和 mounted 值
-      if (mountedRef.current) {
-        const currentCategory = categoryRef.current;
-        const effectiveMode =
-          currentCategory === 'film'
-            ? 'dark'
-            : currentCategory === 'book'
-              ? 'light'
-              : newMode;
-        const theme = getTheme(currentCategory, effectiveMode);
-        applyTheme(theme);
-        document.documentElement.setAttribute('data-theme', `${currentCategory}-${effectiveMode}`);
-      }
-      return newMode;
-    });
+    if (!canToggleTheme(pathname)) return;
+    setDevMode((current) => (current === 'light' ? 'dark' : 'light'));
   };
 
   return (
-    <ThemeContext.Provider
-      value={{
-        category,
-        mode,
-        setCategory,
-        setMode,
-        toggleMode,
-      }}
-    >
+    <ThemeContext.Provider value={{ category, mode, canToggle, toggleMode }}>
       {children}
     </ThemeContext.Provider>
   );

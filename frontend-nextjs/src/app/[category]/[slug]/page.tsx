@@ -67,13 +67,11 @@ export default async function PostPage({
 
   if (category === 'book') {
     return (
-      <main className="main-content pt-[160px]">
-        <BookPost
-          post={post}
-          backLinkHref={`/${categoryPath}`}
-          backLinkLabel={categoryName}
-        />
-      </main>
+      <BookPost
+        post={post}
+        backLinkHref={`/${categoryPath}`}
+        backLinkLabel={categoryName}
+      />
     );
   }
 

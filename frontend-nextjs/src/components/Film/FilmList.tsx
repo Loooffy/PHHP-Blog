@@ -18,8 +18,8 @@ function sortByNewest(posts: PostListItem[]): PostListItem[] {
 }
 
 export function FilmList({ posts }: FilmListProps) {
-  const { category } = useTheme();
-  const theme = getTheme(category || 'film', 'dark');
+  const { category, mode } = useTheme();
+  const theme = getTheme(category || 'film', mode);
 
   const sortedPosts = sortByNewest(posts);
   const firstPost = sortedPosts[0];

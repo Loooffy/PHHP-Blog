@@ -51,8 +51,8 @@ function removeFirstImageFromContent(content: string): string {
 }
 
 export function FilmPost({ post }: FilmPostProps) {
-  const { category } = useTheme();
-  const theme = getTheme(category ?? 'film', 'dark');
+  const { category, mode } = useTheme();
+  const theme = getTheme(category ?? 'film', mode);
 
   const [imageError, setImageError] = useState(false);
   const coverImageUrl =
@@ -76,18 +76,21 @@ export function FilmPost({ post }: FilmPostProps) {
       style={{ backgroundColor: theme.colors.background }}
     >
       {displayImage && (
-        <div className="w-3/5 overflow-hidden">
+        <div className="w-full max-w-3xl overflow-hidden">
           <img
             src={displayImage}
             alt={post.title}
-            className="w-full object-cover"
+            className="w-full max-h-[50vh] object-cover"
             onError={() => setImageError(true)}
           />
         </div>
       )}
 
-      <article className="w-full max-w-3/5 mx-auto flex flex-col gap-8 px-8 py-8 md:px-12 md:py-12">
-        <h1 className="text-3xl md:text-4xl text-left font-medium leading-tight">
+      <article className="w-full max-w-3xl mx-auto flex flex-col gap-8 px-8 py-8 md:px-12 md:py-12">
+        <h1
+          className="text-3xl md:text-4xl text-left font-medium leading-tight"
+          style={{ color: theme.colors.text }}
+        >
           {post.title}
         </h1>
 
@@ -113,6 +116,7 @@ export function FilmPost({ post }: FilmPostProps) {
         {/* Markdown 內容：標準段落排版 */}
         <div className="w-full" style={{ color: theme.colors.text }}>
           <MarkdownContent
+            inheritColor
             content={contentToRender}
             className="[&>p]:mb-6 [&>p]:leading-[1.9] [&>p]:break-inside-avoid-column [&>u]:underline [&>u]:underline-offset-4"
           />

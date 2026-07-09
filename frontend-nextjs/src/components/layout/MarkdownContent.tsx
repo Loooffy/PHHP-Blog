@@ -9,16 +9,29 @@ import remarkGfm from 'remark-gfm';
 interface MarkdownContentProps {
   content: string;
   className?: string;
+  /** 繼承父層文字色，避免與全域 CSS 變數不同步（如 film 列表 dark → 文章 light） */
+  inheritColor?: boolean;
   /** 為 h1-h6 標題加上 id，供 TOC 錨點跳轉 */
   addHeadingIds?: boolean;
   /** 為 h1/h2/h3 加上階層編號 badge（1 / 1.1 / 1.1.1） */
   numberedHeadings?: boolean;
 }
 
-export function MarkdownContent({ content, className = '', addHeadingIds = false, numberedHeadings = false }: MarkdownContentProps) {
+export function MarkdownContent({
+  content,
+  className = '',
+  inheritColor = false,
+  addHeadingIds = false,
+  numberedHeadings = false,
+}: MarkdownContentProps) {
+  const textClass = inheritColor ? 'text-inherit' : 'text-text';
+  const quoteClass = inheritColor
+    ? '[&>blockquote]:text-inherit [&>blockquote]:opacity-70'
+    : '[&>blockquote]:text-text-secondary';
+
   return (
     <div
-      className={`markdown-content leading-relaxed break-words text-text 
+      className={`markdown-content leading-relaxed break-words ${textClass} 
         ${numberedHeadings ? 'numbered-headings' : ''}
         [&>*]:box-border [&>*:not(p)]:m-0 [&>*]:p-0 
         [&>h1]:text-2xl [&_h1]:font-bold [&>h1]:leading-relaxed [&>h1]:my-8
@@ -26,7 +39,7 @@ export function MarkdownContent({ content, className = '', addHeadingIds = false
         [&>h3]:text-lg [&_h3]:font-bold [&>h3]:leading-relaxed [&>h3]:my-4
         [&>p]:my-4 text-medium [&>div]:mb-4 
         [&>p:last-child]:mb-0 [&>div:last-child]:mb-0 
-        [&>blockquote]:ml-3 [&>blockquote]:pl-6 [&>blockquote]:text-text-secondary [&>blockquote]:border-l-[0.3em] [&>blockquote]:border-l-border [&>blockquote]:border-solid
+        [&>blockquote]:ml-3 [&>blockquote]:pl-6 ${quoteClass} [&>blockquote]:border-l-[0.3em] [&>blockquote]:border-l-border [&>blockquote]:border-solid
         [&>ul]:my-4 [&>ul]:pl-8 [&>ul]:list-disc [&>ul]:[list-style-position:outside]
         [&>ol]:my-4 [&>ol]:pl-8 [&>ol]:list-decimal [&>ol]:[list-style-position:outside]
         [&>li]:my-2 [&>li]:[display:list-item]

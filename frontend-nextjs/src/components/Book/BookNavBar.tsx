@@ -1,6 +1,5 @@
 'use client';
 
-import { useTheme } from '@/contexts/ThemeContext';
 import { Category, categoryNames, categoryRoutes } from '@/lib/theme';
 import Link from 'next/link';
 import React from 'react';
@@ -18,8 +17,6 @@ export const BookNavBar = ({
     backLinkHref?: string;
     backLinkLabel?: string;
 }) => {
-    const { setCategory } = useTheme();
-
     return (
         <div className="h-14 border-b border-stone-200/50 flex items-center justify-between px-6 bg-white/80 backdrop-blur-md z-10 sticky top-0">
             <div className="flex w-full px-8 items-center justify-end">
@@ -29,7 +26,6 @@ export const BookNavBar = ({
                             key={cat}
                             href={categoryRoutes[cat]}
                             className="group flex min-w-0 shrink flex-col items-center cursor-pointer text-text-secondary text-xs mx-2 py-1 sm:text-sm sm:px-3 sm:py-1.5 md:px-1 md:py-2 hover:border-b-2 hover:border-primary"
-                            onClick={() => setCategory(cat)}
                         >
                             <span>{categoryNames[cat]}</span>
                         </Link>

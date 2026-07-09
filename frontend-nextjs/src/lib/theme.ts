@@ -210,6 +210,39 @@ export function getTheme(category: Category, mode: ThemeMode): Theme {
   return themes[category][mode];
 }
 
+export function getCategoryFromPath(pathname: string): Category {
+  if (pathname.startsWith('/game')) return 'game';
+  if (pathname.startsWith('/film')) return 'film';
+  if (pathname.startsWith('/book')) return 'book';
+  return 'dev';
+}
+
+function isDevPostPage(pathname: string): boolean {
+  return /^\/dev\/[^/]+/.test(pathname);
+}
+
+function isFilmListPage(pathname: string): boolean {
+  return pathname === '/film' || pathname === '/film/';
+}
+
+function isFilmPostPage(pathname: string): boolean {
+  return /^\/film\/[^/]+/.test(pathname);
+}
+
+/** 僅 dev 文章頁可切換主題 */
+export function canToggleTheme(pathname: string): boolean {
+  return isDevPostPage(pathname);
+}
+
+/** 依路由決定實際套用的 light/dark；devMode 為 dev 區塊的使用者偏好 */
+export function resolveThemeMode(pathname: string, devMode: ThemeMode): ThemeMode {
+  if (pathname === '/') return 'light';
+  if (pathname.startsWith('/book')) return 'light';
+  if (isFilmListPage(pathname)) return 'dark';
+  if (isFilmPostPage(pathname)) return 'light';
+  return devMode;
+}
+
 export function generateThemeCSS(theme: Theme): string {
   return `
     --color-primary: ${theme.colors.primary};
