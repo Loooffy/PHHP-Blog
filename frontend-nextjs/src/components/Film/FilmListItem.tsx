@@ -136,16 +136,6 @@ export function FullWidthFilmCard({ post, category, theme }: FilmCardProps) {
     <article className="flex-1 transition-transform hover:-translate-y-1">
       <Link href={`/${category}/${post.slug || post.id}`} className="no-underline text-inherit block h-full">
         <div className="flex flex-col gap-8">
-          {post.image_url && (
-            <div className="aspect-[1.5/1] overflow-hidden rounded-sm">
-              <img
-                src={post.image_url}
-                alt={post.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-
           <div className="flex gap-8 items-end pl-2">
             <div className="flex flex-col gap-3 min-w-[120px]">
               <span
@@ -182,6 +172,17 @@ export function FullWidthFilmCard({ post, category, theme }: FilmCardProps) {
               </p>
             </div>
           </div>
+          {post.image_url && (
+            <div className="aspect-[1.5/1] overflow-hidden rounded-sm">
+              <img
+                src={post.image_url}
+                alt={post.title}
+                className="object-cover  h-full"
+              />
+            </div>
+          )}
+
+
         </div>
       </Link>
     </article>
