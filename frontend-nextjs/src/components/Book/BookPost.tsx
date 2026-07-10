@@ -1,31 +1,21 @@
 'use client';
 
-import { remarkStripCodeFences } from '@/lib/remark-strip-code-fences';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { BookBottomBar } from './BookBottomBar';
-import { BookNavBar } from './BookNavBar';
+import { useTheme } from '@/contexts/ThemeContext';
+import { getTheme } from '@/lib/theme';
+import type { PostDetail } from '@/types/api';
+import Image from 'next/image';
+import { useState } from 'react';
 
 interface BookPostProps {
-    post: {
-        id: number;
-        title: string;
-        content: string | null;
-        description?: string | null;
-        image_url: string | null;
-        created_at: string;
-        updated_at?: string;
-        author?: string | null;
-        year?: number | null;
-    };
-    backLinkHref?: string;
-    backLinkLabel?: string;
+    post: PostDetail;
 }
 
-function normalizeReaderContent(content: string): string {
-    return content.replace(/\r\n/g, '\n').trim();
+function formatBookTitle(title: string): string {
+    const trimmed = title.trim();
+    if (trimmed.startsWith('《') && trimmed.endsWith('》')) {
+        return trimmed;
+    }
+    return `《${trimmed}》`;
 }
 
 function formatDate(dateString: string): string {
@@ -36,272 +26,74 @@ function formatDate(dateString: string): string {
     return `${year}/${month}/${day}`;
 }
 
-function getAuthorName(author: BookPostProps['post']['author']): string {
-    return author ? String(author) : '';
-}
+export function BookPost({ post }: BookPostProps) {
+    const { category, mode } = useTheme();
+    const theme = getTheme(category ?? 'book', mode);
 
-const BookMetadata = ({
-    title,
-    description,
-    author,
-    year,
-    coverImageUrl,
-    updatedAt,
-}: {
-    title: string;
-    description: string | null;
-    author: string;
-    year: string;
-    coverImageUrl: string | null;
-    updatedAt: string;
-}) => (
-    <div className="break-inside-avoid flex items-center justify-center min-h-[60vh]">
-        <div className="bg-stone-100 p-8 rounded-xl flex flex-col md:flex-row gap-8 items-center w-full shadow-sm relative">
-            {coverImageUrl ? (
-                <img
-                    src={coverImageUrl}
-                    className="w-[60%] md:w-[40%] max-w-[180px] md:max-w-[200px] h-auto object-cover shadow-lg rounded !m-0 mb-6 md:mb-0"
-                    alt={`${title} 書封`}
-                    referrerPolicy="no-referrer"
-                />
-            ) : null}
-            <div className="flex-1 flex flex-col justify-center w-full text-center md:text-left">
-                <h1 className="text-4xl md:text-2xl !leading-[1.1] !mt-0 mb-2 !border-b-0 !pb-0 font-bold text-stone-900">
-                    {title}
-                </h1>
-                <div className="text-m mb-6">{description}</div>
-                <div className="text-lg text-stone-600 space-y-2">
-                    {author ? <p className="!mb-2 text-sm">作者：{author}</p> : null}
-                    {year ? <p className="!mb-2">初版：{year}</p> : null}
-                </div>
-                <p className="text-sm text-stone-400 mt-6 md:mt-8 md:text-right">
-                    最後更新：{formatDate(updatedAt)}
-                </p>
-            </div>
-        </div>
-    </div>
-);
-
-export function BookPost({ post, backLinkHref, backLinkLabel }: BookPostProps) {
-    const bookTitle = post.title;
-    const description = post.description ?? null;
-    const bookAuthor = getAuthorName(post.author);
-    const bookYear = post.year != null ? String(post.year) : '';
+    const [imageError, setImageError] = useState(false);
     const coverImageUrl = post.image_url ?? null;
-    const updatedAt = post.updated_at || post.created_at;
-    const bodyContent = normalizeReaderContent(
-        (post.content ?? '').trim()
-    );
-
-    const [fontSize, setFontSize] = useState(16);
-    const [currentPage, setCurrentPage] = useState(0);
-    const [totalPages, setTotalPages] = useState(1);
-    const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-    const [needsTrailingBlankColumn, setNeedsTrailingBlankColumn] = useState(false);
-    const isLayoutReady = dimensions.width > 0 && dimensions.height > 0;
-
-    const readerRef = useRef<HTMLDivElement>(null);
-    const contentRef = useRef<HTMLDivElement>(null);
-    const layoutSignatureRef = useRef('');
-
-    useEffect(() => {
-        if (dimensions.width > 0) {
-            document.documentElement.style.setProperty('--page-width', `${dimensions.width}px`);
-            document.documentElement.style.setProperty('--page-height', `${dimensions.height}px`);
-        }
-    }, [dimensions]);
-
-    const calculatePages = useCallback(() => {
-        if (readerRef.current) {
-            const scrollWidth = readerRef.current.scrollWidth;
-            const clientWidth = readerRef.current.clientWidth;
-            const clientHeight = readerRef.current.clientHeight;
-
-            if (clientWidth > 0) {
-                setDimensions({ width: clientWidth, height: clientHeight });
-                const layoutSignature = `${bodyContent.length}-${fontSize}-${clientWidth}`;
-                if (layoutSignatureRef.current !== layoutSignature) {
-                    layoutSignatureRef.current = layoutSignature;
-                    if (needsTrailingBlankColumn) {
-                        setNeedsTrailingBlankColumn(false);
-                        return;
-                    }
-                }
-                const isDesktopTwoColumn = window.matchMedia('(min-width: 768px)').matches;
-                const maxScrollLeft = Math.max(0, scrollWidth - clientWidth);
-                const total = Math.max(
-                    1,
-                    Math.floor((maxScrollLeft + 0.5) / clientWidth) + 1
-                );
-                if (!needsTrailingBlankColumn && isDesktopTwoColumn) {
-                    const remainder = maxScrollLeft % clientWidth;
-                    const hasSingleColumnTail = remainder > clientWidth * 0.25;
-                    if (hasSingleColumnTail) {
-                        setNeedsTrailingBlankColumn(true);
-                        return;
-                    }
-                }
-                setTotalPages(total);
-                const currentScroll = readerRef.current.scrollLeft;
-                const page = Math.min(total - 1, Math.floor(currentScroll / clientWidth));
-                setCurrentPage(page);
-            }
-        }
-    }, [bodyContent.length, fontSize, needsTrailingBlankColumn]);
-
-    useEffect(() => {
-        const resizeObserver = new ResizeObserver(() => {
-            requestAnimationFrame(() => {
-                calculatePages();
-            });
-        });
-
-        if (readerRef.current) {
-            resizeObserver.observe(readerRef.current);
-        }
-
-        calculatePages();
-
-        return () => resizeObserver.disconnect();
-    }, [calculatePages, bodyContent]);
-
-    useEffect(() => {
-        const timer = setTimeout(calculatePages, 150);
-        return () => clearTimeout(timer);
-    }, [bodyContent, fontSize, calculatePages]);
-
-    useEffect(() => {
-        if (readerRef.current && dimensions.width > 0) {
-            readerRef.current.scrollTo({
-                left: currentPage * dimensions.width,
-                behavior: 'auto',
-            });
-        }
-    }, [dimensions.width]);
-
-    const goToPage = (page: number) => {
-        if (readerRef.current) {
-            const clientWidth = readerRef.current.clientWidth;
-            const targetPage = Math.max(0, Math.min(page, totalPages - 1));
-            readerRef.current.scrollTo({
-                left: targetPage * clientWidth,
-                behavior: 'smooth',
-            });
-            setCurrentPage(targetPage);
-        }
-    };
-
-    const nextPage = () => goToPage(currentPage + 1);
-    const prevPage = () => goToPage(currentPage - 1);
-
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'ArrowRight') nextPage();
-            if (e.key === 'ArrowLeft') prevPage();
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [currentPage, totalPages]);
-
-    const handleScroll = () => {
-        if (readerRef.current) {
-            const clientWidth = readerRef.current.clientWidth;
-            const scrollLeft = readerRef.current.scrollLeft;
-            const page = Math.min(totalPages - 1, Math.floor(scrollLeft / clientWidth));
-            if (page !== currentPage) {
-                setCurrentPage(page);
-            }
-        }
-    };
-
-    const handleViewportClick = (e: React.MouseEvent) => {
-        const width = window.innerWidth;
-        const x = e.clientX;
-        if (x < width / 3) {
-            prevPage();
-        } else if (x > (width * 2) / 3) {
-            nextPage();
-        }
-    };
+    const displayImage = imageError ? null : coverImageUrl;
+    const bodyContent = (post.content ?? '').trim();
+    const author = post.author?.trim() ?? '';
+    const updatedAt = post.updated_at ?? post.created_at;
 
     return (
-        <div className="fixed inset-0 z-[1000] bg-[#fdfaf6] text-stone-800 flex flex-col overflow-hidden font-serif select-none">
-            <BookNavBar
-                fontSize={fontSize}
-                setFontSize={setFontSize}
-                backLinkHref={backLinkHref}
-                backLinkLabel={backLinkLabel}
-            />
-
-            <div
-                className="flex-1 relative cursor-pointer overflow-hidden"
-                onClick={handleViewportClick}
-            >
-                <div
-                    ref={readerRef}
-                    onScroll={handleScroll}
-                    className={`absolute inset-0 overflow-x-auto overflow-y-hidden snap-x snap-mandatory scroll-smooth hide-scrollbar ${
-                        isLayoutReady ? 'opacity-100' : 'opacity-0'
-                    }`}
+        <div
+            className="flex flex-col items-center w-full font-['Inter',sans-serif]"
+            style={{ backgroundColor: theme.colors.background }}
+        >
+            <header className="w-full max-w-3xl mx-auto px-8 pt-10 pb-6 md:px-12 md:pt-12 text-center">
+                <h1
+                    className="text-2xl md:text-2xl font-bold leading-snug"
                 >
-                    <div
-                        ref={contentRef}
-                        className="h-full w-fit min-w-full columns-1 md:columns-2 gap-0 column-fill-auto py-16 md:py-20 box-border block overflow-wrap-break-word hyphens-auto"
-                        style={{ height: 'var(--page-height, 100vh)' }}
-                    >
-                        <div
-                            className={`
-                contents max-w-none
-                [&>p]:text-justify [&>p]:mb-6 [&>p]:mt-4
-                [&>h1]:break-inside-avoid [&>h1]:break-after-avoid [&>h1]:mt-8 [&>h1]:mb-4 [&>h1]:text-stone-900 [&>h1]:border-b [&>h1]:border-stone-200 [&>h1]:pb-2
-                [&>h2]:break-inside-avoid [&>h2]:break-after-avoid [&>h2]:mt-8 [&>h2]:mb-4 [&>h2]:text-stone-900
-                [&>h3]:break-inside-avoid [&>h3]:break-after-avoid [&>h3]:mt-8 [&>h3]:mb-4 [&>h3]:text-stone-900
-                [&>img]:rounded-lg [&>img]:shadow-md [&>img]:mx-auto [&>img]:max-h-[60vh] [&>img]:object-contain [&>img]:my-8 [&>img]:break-inside-avoid
-                [&>pre]:break-inside-avoid [&>pre]:my-6 [&>pre]:p-4 [&>pre]:bg-stone-100 [&>pre]:rounded-lg [&>pre]:overflow-x-auto [&>pre]:font-mono [&>pre]:text-sm
-                [&_pre_code]:p-0 [&_pre_code]:bg-transparent
-                [&>code]:font-mono [&>code]:text-sm [&>code]:bg-stone-100 [&>code]:px-1 [&>code]:py-0.5 [&>code]:rounded
-                [&>ul]:my-4 [&>ul]:pl-8 [&>ul]:list-disc [&>ul]:break-inside-avoid
-                [&>ol]:my-4 [&>ol]:pl-8 [&>ol]:list-decimal [&>ol]:break-inside-avoid
-                [&>li]:my-2 [&>li]:[display:list-item]
-                [&>blockquote]:ml-3 [&>blockquote]:pl-6 [&>blockquote]:text-stone-600 [&>blockquote]:border-l-4 [&>blockquote]:border-stone-300 [&>blockquote]:break-inside-avoid
-                [&>a]:text-stone-700 [&>a]:underline [&>a:hover]:text-stone-900
-                [&>strong]:font-bold [&>em]:italic
-                [&>*]:px-8 md:[&>*]:px-16 [&>*]:box-border [&>*]:snap-start [&>*]:max-w-full
-              `}
-                            style={{ fontSize: `${fontSize}px` }}
-                        >
-                            <BookMetadata
-                                title={bookTitle}
-                                description={description}
-                                author={bookAuthor}
-                                year={bookYear}
-                                coverImageUrl={coverImageUrl}
-                                updatedAt={updatedAt}
-                            />
-                            <ReactMarkdown remarkPlugins={[remarkGfm, remarkStripCodeFences]}>{bodyContent}</ReactMarkdown>
-                            {needsTrailingBlankColumn ? (
-                                <div
-                                    className="hidden md:block break-before-column h-[var(--page-height,100vh)]"
-                                    aria-hidden
-                                />
-                            ) : null}
-                        </div>
-                    </div>
-                </div>
+                    {formatBookTitle(post.title)}
+                </h1>
+            </header>
 
-                <div className="absolute inset-y-0 left-0 w-16 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity pointer-events-none group">
-                    <div className="bg-black/5 group-hover:bg-black/10 p-3 rounded-full backdrop-blur-sm transition-colors">
-                        <ChevronLeft size={24} className="text-stone-600" />
+            <div className="w-full max-w-3xl mx-auto px-8 md:px-12 mb-8">
+                <div
+                    className="flex justify-center items-baseline gap-4 border-b pb-4 text-sm"
+                    style={{ borderColor: theme.colors.border, color: theme.colors.textSecondary }}
+                >
+                    <div className="flex flex-wrap gap-x-6 gap-y-1">
+                        {author && (
+                            <span>
+                                作者：<span style={{ color: theme.colors.text }}>{author}</span>
+                            </span>
+                        )}
                     </div>
-                </div>
-                <div className="absolute inset-y-0 right-0 w-16 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity pointer-events-none group">
-                    <div className="bg-black/5 group-hover:bg-black/10 p-3 rounded-full backdrop-blur-sm transition-colors">
-                        <ChevronRight size={24} className="text-stone-600" />
-                    </div>
+                    <span className="shrink-0">最後更新：{formatDate(updatedAt)}</span>
                 </div>
             </div>
 
-            <BookBottomBar currentPage={currentPage} totalPages={totalPages} />
+            {displayImage ? (
+                <div className="w-full max-w-3xl mx-auto px-8 md:px-12">
+                    <div
+                        className="flex justify-center items-center px-6 mb-10 md:px-10"
+                    >
+                        <Image
+                            src={displayImage}
+                            alt={`${post.title} 書封`}
+                            width={0}
+                            height={0}
+                            sizes="(max-width: 768px) 100vw, 768px"
+                            className="max-w-full max-h-[50vh] w-auto h-auto object-contain"
+                            referrerPolicy="no-referrer"
+                            onError={() => setImageError(true)}
+                        />
+                    </div>
+                </div>
+            ) : null}
+
+
+
+            <article className="w-full max-w-3xl mx-auto flex flex-col px-8 pb-12 md:px-12 md:pb-16">
+                <div className="w-full" style={{ color: theme.colors.text }}>
+                    <p className="mb-6 leading-[1.8] text-justify break-inside-avoid-column whitespace-pre-wrap font-medium">
+                        {bodyContent}
+                    </p>
+                </div>
+            </article>
         </div>
     );
 }

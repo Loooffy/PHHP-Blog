@@ -21,10 +21,6 @@ export function TopNavbar() {
     return <GameNavBar />;
   }
 
-  if (pathname.startsWith('/book/')) {
-    return null;
-  }
-
   const getNavbarBgClassName = () => {
     if (pathname.startsWith('/game')) {
       return 'bg-[#3bcbe5]';

@@ -1,6 +1,5 @@
 'use client';
 
-import { MarkdownContent } from '@/components/layout/MarkdownContent';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getTheme } from '@/lib/theme';
 import type { PostDetail } from '@/types/api';
@@ -113,13 +112,10 @@ export function FilmPost({ post }: FilmPostProps) {
           <span className="shrink-0">最後更新：{formatDate(updatedAt)}</span>
         </div>
 
-        {/* Markdown 內容：標準段落排版 */}
         <div className="w-full" style={{ color: theme.colors.text }}>
-          <MarkdownContent
-            inheritColor
-            content={contentToRender}
-            className="[&>p]:mb-6 [&>p]:leading-[1.9] [&>p]:break-inside-avoid-column [&>u]:underline [&>u]:underline-offset-4"
-          />
+          <p className="mb-6 leading-[1.8] break-inside-avoid-column whitespace-pre-wrap font-medium">
+            {contentToRender}
+          </p>
         </div>
       </article>
     </div>
