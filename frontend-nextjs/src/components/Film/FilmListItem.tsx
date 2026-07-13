@@ -85,13 +85,11 @@ export function NarrowFilmCard({ post, category, theme }: FilmCardProps) {
       <Link href={`/${category}/${post.slug || post.id}`} className="no-underline text-inherit block h-full">
         <div className="w-full h-[280px] flex flex-col justify-between gap-4">
           {post.image_url && (
-            <div className="overflow-hidden rounded-sm">
-              <img
-                src={post.image_url}
-                alt={post.title}
-                className="w-auto h-auto object-cover"
-              />
-            </div>
+            <img
+              src={post.image_url}
+              alt={post.title}
+              className="w-auto h-full object-cover"
+            />
           )}
 
           <div className="flex flex-col gap-1">
@@ -173,7 +171,7 @@ export function FullWidthFilmCard({ post, category, theme }: FilmCardProps) {
             </div>
           </div>
           {post.image_url && (
-            <div className="aspect-[1.5/1] overflow-hidden rounded-sm">
+            <div className="aspect-[1.5/1] overflow-hidden">
               <img
                 src={post.image_url}
                 alt={post.title}
@@ -181,8 +179,6 @@ export function FullWidthFilmCard({ post, category, theme }: FilmCardProps) {
               />
             </div>
           )}
-
-
         </div>
       </Link>
     </article>
