@@ -1,5 +1,6 @@
 'use client';
 
+import { MarkdownContent } from '@/components/layout/MarkdownContent';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getTheme } from '@/lib/theme';
 import type { PostDetail } from '@/types/api';
@@ -89,9 +90,11 @@ export function BookPost({ post }: BookPostProps) {
 
             <article className="w-full max-w-3xl mx-auto flex flex-col px-8 pb-12 md:px-12 md:pb-16">
                 <div className="w-full" style={{ color: theme.colors.text }}>
-                    <p className="mb-6 leading-[1.8] text-justify break-inside-avoid-column whitespace-pre-wrap font-medium">
-                        {bodyContent}
-                    </p>
+                    <MarkdownContent
+                        inheritColor
+                        content={bodyContent}
+                        className="[&>p]:mb-6 [&>p]:leading-[1.8] [&>p]:text-justify [&>p]:break-inside-avoid-column [&>u]:underline [&>u]:underline-offset-4"
+                    />
                 </div>
             </article>
         </div>
