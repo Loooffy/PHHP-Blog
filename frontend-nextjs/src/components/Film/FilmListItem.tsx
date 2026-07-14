@@ -20,7 +20,6 @@ export function WideFilmCard({ post, category, theme }: FilmCardProps) {
     <article className="transition-transform hover:-translate-y-1">
       <Link href={`/${category}/${post.slug || post.id}`} className="no-underline text-inherit block h-full">
         <div className="flex w-full h-[280px] gap-8 items-stretch flex-nowrap">
-          {/* <div className="w-1/2 min-w-2/5 flex flex-col"> */}
           <div className="flex flex-col">
             <div className="flex items-center gap-4">
               <span
@@ -37,26 +36,29 @@ export function WideFilmCard({ post, category, theme }: FilmCardProps) {
 
             <div className="flex-1">
               <h2
-                className="font-['Inter',sans-serif] text-2xl font-medium mt-4 mb-2 leading-[1.1] md:text-2xl"
+                className="font-['Inter',sans-serif] text-2xl font-medium mt-4 mb-1 leading-[1.1] md:text-2xl"
                 style={{ color: theme.colors.accent }}
               >
                 {post.title}
               </h2>
               {description && (
                 <p
-                  className="font-['Inter',sans-serif] text-sm text-right font-bold mb-2 line-clamp-2"
+                  className="font-['Inter',sans-serif] text-sm text-left font-bold mb-4 line-clamp-2"
                   style={{ color: theme.colors.text }}
                 >
-                  {'－' + description}
+                  {description}
                 </p>
               )}
-              {directors.map((director) => (
+              {[
+                ...Array(Math.max(0, 2 - directors.length)).fill(''),
+                ...directors,
+              ].map((director, i) => (
                 <p
-                  key={director}
+                  key={director || `director-slot-${i}`}
                   className="font-['Inter',sans-serif] text-sm font-light"
                   style={{ color: theme.colors.text }}
                 >
-                  {director}
+                  {director || '\u00A0'}
                 </p>
               ))}
             </div>
@@ -96,13 +98,15 @@ export function NarrowFilmCard({ post, category, theme }: FilmCardProps) {
   return (
     <article className="w-1/5 min-w-0 shrink-0 transition-transform hover:-translate-y-1">
       <Link href={`/${category}/${post.slug || post.id}`} className="no-underline text-inherit block h-full">
-        <div className="w-full h-[280px] flex flex-col justify-between gap-4">
+        <div className="w-full flex flex-col gap-4">
           {post.image_url && (
-            <img
-              src={post.image_url}
-              alt={post.title}
-              className="w-auto h-full object-cover"
-            />
+            <div className="w-full aspect-3/2 overflow-hidden">
+              <img
+                src={post.image_url}
+                alt={post.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
           )}
 
           <div className="flex flex-col">
@@ -114,32 +118,28 @@ export function NarrowFilmCard({ post, category, theme }: FilmCardProps) {
             </h2>
             {description && (
               <p
-                className="mb-2 font-['Inter',sans-serif] text-xs text-right font-bold line-clamp-2"
-              // style={{ color: theme.colors.background, backgroundColor: theme.colors.accent }}
+                className="mt-1 mb-4 font-['Inter',sans-serif] text-xs text-left font-bold line-clamp-2"
               >
-                {'－' + description}
+                {description}
               </p>
             )}
-            {directors.map((director) => (
+            {[
+              ...Array(Math.max(0, 2 - directors.length)).fill(''),
+              ...directors,
+            ].map((director, i) => (
               <p
-                key={director}
-                className="font-['Inter',sans-serif] text-xs text-left font-light"
+                key={director || `director-slot-${i}`}
+                className="font-['Inter',sans-serif] text-[0.6rem] text-right font-light"
                 style={{ color: theme.colors.text }}
               >
-                {director}
+                {director || '\u00A0'}
               </p>
             ))}
             <span
-              className="font-['Glegoo',serif] text-m text-right leading-none"
+              className="mt-2 font-['Inter',sans-serif] text-[0.7rem] text-right leading-normal tracking-wider uppercase"
               style={{ color: theme.colors.text }}
             >
-              {year}
-            </span>
-            <span
-              className="font-['Inter',sans-serif] text-xs text-right leading-normal tracking-wider uppercase"
-              style={{ color: theme.colors.text }}
-            >
-              {film_country} / {film_length} MIN / {film_category}
+              {year} / {film_country} / {film_length} MIN / {film_category}
             </span>
           </div>
         </div>
@@ -204,7 +204,7 @@ export function FullWidthFilmCard({ post, category, theme }: FilmCardProps) {
             </div>
           </div>
           {post.image_url && (
-            <div className="aspect-[1.5/1] overflow-hidden">
+            <div className="aspect-3/2 overflow-hidden">
               <img
                 src={post.image_url}
                 alt={post.title}
