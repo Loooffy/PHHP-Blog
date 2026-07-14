@@ -59,7 +59,7 @@ export function FilmPost({ post }: FilmPostProps) {
     post.image_url ?? extractFirstImageUrl(post.content ?? '') ?? null;
   const displayImage = imageError ? null : coverImageUrl;
 
-  const director = post.director ?? '';
+  const directors = (post.directors ?? []).join(', ');
   const year =
     post.year != null ? String(post.year) : new Date(post.created_at).getFullYear();
   const updatedAt = post.updated_at ?? post.created_at;
@@ -99,9 +99,9 @@ export function FilmPost({ post }: FilmPostProps) {
           style={{ borderColor: theme.colors.border, color: theme.colors.textSecondary }}
         >
           <div className="flex flex-wrap gap-x-6 gap-y-1">
-            {director && (
+            {directors && (
               <span>
-                導演：<span style={{ color: theme.colors.text }}>{director}</span>
+                導演：<span style={{ color: theme.colors.text }}>{directors}</span>
               </span>
             )}
             {year && (

@@ -9,7 +9,8 @@ class Post < ApplicationRecord
   belongs_to :post_type
   belongs_to :user, optional: true
   belongs_to :author, class_name: "Person", optional: true, inverse_of: :authored_posts
-  belongs_to :director, class_name: "Person", optional: true, inverse_of: :directed_posts
+  has_many :post_directors, dependent: :destroy
+  has_many :directors, through: :post_directors, source: :person
   has_many :post_tags, dependent: :destroy
   has_many :tags, through: :post_tags
   has_many :series_posts, dependent: :destroy
@@ -55,7 +56,7 @@ class Post < ApplicationRecord
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    %w[id user_id author_id director_id post_type_id title description slug content year rating status published_at created_at updated_at image_key]
+    %w[id user_id author_id post_type_id title description slug content year rating status published_at created_at updated_at image_key]
   end
 
   def image_url
@@ -82,6 +83,7 @@ class Post < ApplicationRecord
   end
 
   def self.ransackable_associations(auth_object = nil)
-    %w[user author director post_type tags series post_film_info]
+    %w[user author directors post_directors post_type tags series post_film_info]
   end
 end
+

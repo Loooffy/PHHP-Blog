@@ -25,7 +25,7 @@ export interface PostListItem {
   published_at: string | null;
   created_at: string;
   author: string | null;
-  director: string | null;
+  directors: string[];
   tags: Tag[];
 }
 

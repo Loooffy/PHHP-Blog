@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_02_28_135011) do
+ActiveRecord::Schema[7.2].define(version: 2026_07_14_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -68,6 +68,16 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_28_135011) do
     t.index ["name"], name: "index_person_types_on_name", unique: true
   end
 
+  create_table "post_directors", force: :cascade do |t|
+    t.bigint "post_id", null: false
+    t.bigint "person_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["person_id"], name: "index_post_directors_on_person_id"
+    t.index ["post_id", "person_id"], name: "index_post_directors_on_post_id_and_person_id", unique: true
+    t.index ["post_id"], name: "index_post_directors_on_post_id"
+  end
+
   create_table "post_film_infos", force: :cascade do |t|
     t.integer "film_length"
     t.bigint "film_country_id"
@@ -100,7 +110,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_28_135011) do
   create_table "posts", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "author_id"
-    t.bigint "director_id"
     t.string "title"
     t.string "description"
     t.string "slug"
@@ -114,7 +123,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_28_135011) do
     t.bigint "post_type_id", null: false
     t.string "image_key"
     t.index ["author_id"], name: "index_posts_on_author_id"
-    t.index ["director_id"], name: "index_posts_on_director_id"
     t.index ["post_type_id"], name: "index_posts_on_post_type_id"
     t.index ["slug"], name: "index_posts_on_slug", unique: true
     t.index ["user_id"], name: "index_posts_on_user_id"
@@ -158,13 +166,14 @@ ActiveRecord::Schema[7.2].define(version: 2026_02_28_135011) do
   end
 
   add_foreign_key "people", "person_types"
+  add_foreign_key "post_directors", "people"
+  add_foreign_key "post_directors", "posts"
   add_foreign_key "post_film_infos", "film_categories"
   add_foreign_key "post_film_infos", "film_countries"
   add_foreign_key "post_film_infos", "posts"
   add_foreign_key "post_tags", "posts"
   add_foreign_key "post_tags", "tags"
   add_foreign_key "posts", "people", column: "author_id"
-  add_foreign_key "posts", "people", column: "director_id"
   add_foreign_key "posts", "post_types"
   add_foreign_key "posts", "users"
   add_foreign_key "series", "post_types"

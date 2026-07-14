@@ -20,7 +20,7 @@ module Api
           @posts = @posts.joins(:series_posts).where(series_posts: conditions).distinct
         end
 
-        @posts = @posts.includes(:tags, :series_posts => :series, :post_film_info => [:film_category, :film_country]).page(params[:page]).per(params[:per_page] || 20)
+        @posts = @posts.includes(:tags, :directors, :series_posts => :series, :post_film_info => [:film_category, :film_country]).page(params[:page]).per(params[:per_page] || 20)
       end
 
       def show
@@ -76,14 +76,14 @@ module Api
       private
 
       def set_post
-        @post = Post.includes(:tags, :series_posts => :series, :post_film_info => [:film_category, :film_country]).find_by(slug: params[:slug])
+        @post = Post.includes(:tags, :directors, :series_posts => :series, :post_film_info => [:film_category, :film_country]).find_by(slug: params[:slug])
       end
 
       def post_params
         params.require(:post).permit(
-          :user_id, :author_id, :director_id, :post_type_id,
+          :user_id, :author_id, :post_type_id,
           :title, :description, :content, :year, :rating, :status, :published_at,
-          :image_file, tag_ids: [], series_posts_attributes: [:id, :series_id, :position, :_destroy]
+          :image_file, tag_ids: [], director_ids: [], series_posts_attributes: [:id, :series_id, :position, :_destroy]
         )
       end
 

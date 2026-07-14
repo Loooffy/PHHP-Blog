@@ -6,15 +6,16 @@ import Link from 'next/link';
 interface FilmCardProps {
   post: PostListItem;
   category: string;
-  theme: { colors: { text: string; accent: string } };
+  theme: { colors: { text: string; accent: string; background: string } };
 }
 
 export function WideFilmCard({ post, category, theme }: FilmCardProps) {
-  const director = post.director ?? '';
+  const directors = post.directors ?? [];
   const year = post.year ?? new Date(post.created_at).getFullYear();
   const film_category = post.film_category ?? '';
   const film_country = post.film_country ?? '';
   const film_length = post.film_length ?? '';
+  const description = post.description?.trim() ?? '';
   return (
     <article className="transition-transform hover:-translate-y-1">
       <Link href={`/${category}/${post.slug || post.id}`} className="no-underline text-inherit block h-full">
@@ -41,12 +42,23 @@ export function WideFilmCard({ post, category, theme }: FilmCardProps) {
               >
                 {post.title}
               </h2>
-              <p
-                className="font-['Inter',sans-serif] text-xl font-light"
-                style={{ color: theme.colors.text }}
-              >
-                {director}
-              </p>
+              {description && (
+                <p
+                  className="font-['Inter',sans-serif] text-sm text-right font-bold mb-2 line-clamp-2"
+                  style={{ color: theme.colors.text }}
+                >
+                  {'－' + description}
+                </p>
+              )}
+              {directors.map((director) => (
+                <p
+                  key={director}
+                  className="font-['Inter',sans-serif] text-sm font-light"
+                  style={{ color: theme.colors.text }}
+                >
+                  {director}
+                </p>
+              ))}
             </div>
 
             <div className="mt-auto text-right">
@@ -75,11 +87,12 @@ export function WideFilmCard({ post, category, theme }: FilmCardProps) {
 }
 
 export function NarrowFilmCard({ post, category, theme }: FilmCardProps) {
-  const director = post.director ?? '';
+  const directors = post.directors ?? [];
   const year = post.year ?? new Date(post.created_at).getFullYear();
   const film_category = post.film_category ?? '';
   const film_country = post.film_country ?? '';
   const film_length = post.film_length ?? '';
+  const description = post.description?.trim() ?? '';
   return (
     <article className="w-1/5 min-w-0 shrink-0 transition-transform hover:-translate-y-1">
       <Link href={`/${category}/${post.slug || post.id}`} className="no-underline text-inherit block h-full">
@@ -92,19 +105,30 @@ export function NarrowFilmCard({ post, category, theme }: FilmCardProps) {
             />
           )}
 
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col">
             <h2
               className="font-['Inter',sans-serif] text-xl text-left text-l font-medium leading-tight"
               style={{ color: theme.colors.accent }}
             >
               {post.title}
             </h2>
-            <p
-              className="font-['Inter',sans-serif] text-m text-left font-light"
-              style={{ color: theme.colors.text }}
-            >
-              {director}
-            </p>
+            {description && (
+              <p
+                className="mb-2 font-['Inter',sans-serif] text-xs text-right font-bold line-clamp-2"
+              // style={{ color: theme.colors.background, backgroundColor: theme.colors.accent }}
+              >
+                {'－' + description}
+              </p>
+            )}
+            {directors.map((director) => (
+              <p
+                key={director}
+                className="font-['Inter',sans-serif] text-xs text-left font-light"
+                style={{ color: theme.colors.text }}
+              >
+                {director}
+              </p>
+            ))}
             <span
               className="font-['Glegoo',serif] text-m text-right leading-none"
               style={{ color: theme.colors.text }}
@@ -125,11 +149,12 @@ export function NarrowFilmCard({ post, category, theme }: FilmCardProps) {
 }
 
 export function FullWidthFilmCard({ post, category, theme }: FilmCardProps) {
-  const director = post.director ?? '';
+  const directors = (post.directors ?? []).join(', ');
   const year = post.year ?? new Date(post.created_at).getFullYear();
   const film_category = post.film_category ?? '';
   const film_country = post.film_country ?? '';
   const film_length = post.film_length ?? '';
+  const description = post.description?.trim() ?? '';
   return (
     <article className="flex-1 transition-transform hover:-translate-y-1">
       <Link href={`/${category}/${post.slug || post.id}`} className="no-underline text-inherit block h-full">
@@ -162,11 +187,19 @@ export function FullWidthFilmCard({ post, category, theme }: FilmCardProps) {
               >
                 {post.title}
               </h2>
+              {description && (
+                <p
+                  className="font-['Inter',sans-serif] text-base font-light line-clamp-2"
+                  style={{ color: theme.colors.text }}
+                >
+                  {description}
+                </p>
+              )}
               <p
                 className="font-['Inter',sans-serif] text-xl font-light"
                 style={{ color: theme.colors.text }}
               >
-                {director}
+                {directors}
               </p>
             </div>
           </div>

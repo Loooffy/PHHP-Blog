@@ -6,7 +6,8 @@ class Person < ApplicationRecord
 
   belongs_to :person_type
   has_many :authored_posts, class_name: "Post", foreign_key: :author_id, dependent: :nullify, inverse_of: :author
-  has_many :directed_posts, class_name: "Post", foreign_key: :director_id, dependent: :nullify, inverse_of: :director
+  has_many :post_directors, dependent: :destroy
+  has_many :directed_posts, through: :post_directors, source: :post
 
   validates :name, presence: true, uniqueness: true
 

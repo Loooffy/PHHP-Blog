@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 ActiveAdmin.register Post do
-  permit_params :user_id, :author_id, :director_id, :post_type_id, :title, :description, :content,
-                :year, :rating, :status, :published_at, :image_key, tag_ids: [],
+  permit_params :user_id, :author_id, :post_type_id, :title, :description, :content,
+                :year, :rating, :status, :published_at, :image_key, tag_ids: [], director_ids: [],
                 series_posts_attributes: [:id, :series_id, :position, :_destroy],
                 post_film_info_attributes: [:id, :film_category_id, :film_country_id, :film_length, :_destroy]
 
@@ -40,7 +40,7 @@ ActiveAdmin.register Post do
   filter :title
   filter :user
   filter :author
-  filter :director
+  filter :directors_id_eq, as: :select, collection: proc { Person.directors.pluck(:name, :id) }, label: "Director"
   filter :status
   filter :published_at
   filter :created_at
@@ -56,7 +56,7 @@ ActiveAdmin.register Post do
       f.input :content, as: :markdown_editor
       f.input :user
       f.input :author, collection: Person.authors, label: "Author (for BookPost)"
-      f.input :director, collection: Person.directors, label: "Director (for FilmPost)"
+      f.input :directors, as: :check_boxes, collection: Person.directors, label: "Directors (for FilmPost)"
       f.input :year
       f.semantic_fields_for :post_film_info, (f.object.post_film_info || f.object.build_post_film_info) do |pfi|
         pfi.input :film_category_id, as: :select, collection: FilmCategory.pluck(:film_category, :id), label: "Film Category", include_blank: true, required: false
@@ -171,7 +171,9 @@ ActiveAdmin.register Post do
       end
       row :user
       row :author
-      row :director
+      row :directors do |post|
+        post.directors.map(&:name).join(", ").presence || "無"
+      end
       row :year
       row :film_info do |post|
         if post.post_film_info

@@ -13,7 +13,7 @@ json.published_at @post.published_at
 json.created_at @post.created_at
 json.updated_at @post.updated_at
 json.author @post.author&.name
-json.director @post.director&.name
+json.directors @post.directors.map(&:name)
 json.tags @post.tags do |tag|
   json.id tag.id
   json.name tag.name
